@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require 'thor'
+require_relative 'cli/version'
+require_relative 'cli/plugin'
 
 module Psdk
   module Cli
@@ -14,8 +16,9 @@ module Psdk
       def version
         puts "psdk-cli v#{VERSION}"
       end
+
+      desc 'plugin', 'manage PSDK plugins'
+      subcommand 'plugin', Plugin
     end
   end
 end
-
-require_relative 'cli/version'

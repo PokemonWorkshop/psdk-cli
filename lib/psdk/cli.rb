@@ -12,7 +12,7 @@ module Psdk
     class Main < Thor
       package_name 'psdk-cli'
 
-      desc('version', 'show the psdk-cli version')
+      desc 'version', 'show the psdk-cli version'
       def version
         puts "psdk-cli v#{VERSION}"
       end

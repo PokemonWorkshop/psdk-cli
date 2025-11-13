@@ -148,5 +148,20 @@ RSpec.describe Psdk::Cli::Configuration do
                                          "---\n:studio_path: tmp/project\n")
     Psdk::Cli::Configuration.save
   end
+
+  it 'loads the project path as the path that contains project.studio' do
+    allow(Dir).to receive(:pwd) { '/users/user_a/documents/projects/super_game/Data/studio/maps' }
+    allow(Dir).to receive(:exist?) { |filename| filename == 'tmp/studio_repository' }
+    allow(File).to receive(:exist?) do |filename|
+      next filename.end_with?('/super_game/project.studio') || filename.end_with?('/.psdk-cli.yml')
+    end
+    allow(IO).to receive(:open) do |_, &block|
+      block.call(StringIO.new(YAML.dump({ studio_path: 'tmp/studio_repository' })))
+    end
+
+    local = Psdk::Cli::Configuration.get(:local)
+    expect(local.to_h).to eq({ studio_path: 'tmp/studio_repository', project_paths: [] })
+    expect(Psdk::Cli::Configuration.project_path).to eq('/users/user_a/documents/projects/super_game')
+  end
 end
 # rubocop:enable Metrics/BlockLength

@@ -1,9 +1,13 @@
 AllCops:
   TargetRubyVersion: 3.2
   NewCops: enable
+  SuggestExtensions: false
 
 Style/StringLiterals:
   EnforcedStyle: single_quotes
 
 Style/StringLiteralsInInterpolation:
   EnforcedStyle: single_quotes
+
+Style/RedundantReturn:
+  Enabled: false

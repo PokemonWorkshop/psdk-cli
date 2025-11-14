@@ -73,6 +73,7 @@ RSpec.describe Psdk::Cli::Configuration do
 
   it 'loads an empty configuration if neither global or local file exists' do
     expect(File).to receive(:read).exactly(0).times
+    allow(File).to receive(:exist?).and_return(false)
 
     global = Psdk::Cli::Configuration.get(:global)
     local = Psdk::Cli::Configuration.get(:local)

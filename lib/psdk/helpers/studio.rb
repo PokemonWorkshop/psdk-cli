@@ -66,8 +66,8 @@ module Psdk
       def psdk_binaries_locations
         return [
           'psdk-binaries',
-          'Contents/Ressources/psdk-binaries',
-          'ressources/psdk-binaries'
+          'Contents/Resources/psdk-binaries',
+          'resources/psdk-binaries'
         ]
       end
 

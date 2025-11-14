@@ -133,7 +133,7 @@ RSpec.describe Psdk::Cli::Configuration do
   it 'successfully saves the configurations' do
     stub_const('Psdk::Cli::Configuration::GLOBAL_CONFIGURATION_FILENAME', 'tmp/global.yml')
     allow(File).to receive(:exist?) { |filename| filename.end_with?('/project.studio') }
-    allow(Dir).to receive(:exist?) { |filename| filename.start_with?('tmp/') }
+    allow(Dir).to receive(:exist?) { |filename| filename.start_with?('tmp/') || filename.end_with?('tmp') }
 
     global = Psdk::Cli::Configuration.get(:global)
     local = Psdk::Cli::Configuration.get(:local)

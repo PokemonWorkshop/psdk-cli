@@ -2,6 +2,8 @@
 
 require 'psdk/cli'
 require 'psdk/cli/configuration'
+require 'psdk/helpers/studio'
+require 'psdk/helpers/version'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

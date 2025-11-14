@@ -25,6 +25,7 @@ module Psdk
       # @return [String | nil]
       def psdk_binaries_path(path)
         valid_path = psdk_binaries_locations.find { |l| Dir.exist?(File.join(path, l)) }
+        return nil unless valid_path
 
         return File.join(path, valid_path)
       end

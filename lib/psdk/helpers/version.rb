@@ -54,7 +54,7 @@ module Psdk
         psdk_path = File.join(Configuration.project_path, 'pokemonsdk')
         return show_no_local_psdk_version unless Dir.exist?(psdk_path)
 
-        version_string = version_to_string(load_version_integer(File.join(psdk_binaries_path, 'pokemonsdk')))
+        version_string = version_to_string(load_version_integer(psdk_path))
         puts "Project PSDK version: #{version_string}"
         git_data = load_git_data(psdk_path)
         puts "Project's PSDK git target: #{git_data}" unless git_data.empty?
@@ -92,7 +92,7 @@ module Psdk
       # @return [Integer]
       def load_version_integer(path)
         filename = File.join(path, 'version.txt')
-        return nil unless File.exist?(filename)
+        return 0 unless File.exist?(filename)
 
         return File.read(filename).to_i
       end

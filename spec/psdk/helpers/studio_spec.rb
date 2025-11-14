@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# rubocop:disable Metrics/BlockLength
 RSpec.describe Psdk::Cli::Studio do
   it 'provides Studio location in AppData' do
     expect(ENV).to receive(:fetch).with('AppData', '.').and_return('C:/Users/User/AppData/Roaming')
@@ -43,7 +44,9 @@ RSpec.describe Psdk::Cli::Studio do
     configuration = Psdk::Cli::Configuration.new({})
     allow(Dir).to receive(:exist?) { |path| path == '/path/resources/psdk-binaries' }
     allow($stdin).to receive(:gets).and_return("/path\n")
-    expect(Psdk::Cli::Studio).to receive(:print).with("\rCould not automatically find Pokémon Studio path, please enter it:")
+    expect(Psdk::Cli::Studio).to receive(:print).with(
+      "\rCould not automatically find Pokémon Studio path, please enter it:"
+    )
     expect(Psdk::Cli::Configuration).to receive(:get).with(:global).and_return(configuration)
     expect(configuration).to receive(:studio_path=).with('/path')
     expect(Psdk::Cli::Configuration).to receive(:save)
@@ -73,9 +76,16 @@ RSpec.describe Psdk::Cli::Studio do
     expect(Psdk::Cli::Studio.psdk_binaries_path('/path')).to eq('/path/resources/psdk-binaries')
   end
 
+  it 'returns nil as psdk-binaries path if none match' do
+    allow(Dir).to receive(:exist?) { false }
+
+    expect(Psdk::Cli::Studio.psdk_binaries_path('/path')).to eq(nil)
+  end
+
   it 'finds the Studio path' do
     configuration = Psdk::Cli::Configuration.new({})
-    valid_paths = ['/Applications/PokemonStudio.app', '/Applications/PokemonStudio.app/Contents/Resources/psdk-binaries']
+    valid_paths = ['/Applications/PokemonStudio.app',
+                   '/Applications/PokemonStudio.app/Contents/Resources/psdk-binaries']
     allow(Dir).to receive(:exist?) { |path| valid_paths.include?(path) }
     expect(Psdk::Cli::Studio).to receive(:puts).with("\rLocated Pokemon Studio in `/Applications/PokemonStudio.app`")
     expect(Psdk::Cli::Configuration).to receive(:get).with(:global).and_return(configuration)
@@ -106,3 +116,4 @@ RSpec.describe Psdk::Cli::Studio do
     Psdk::Cli::Studio.find_and_save_path
   end
 end
+# rubocop:enable Metrics/BlockLength

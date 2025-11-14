@@ -5,7 +5,9 @@ RSpec.describe Psdk::Cli::Studio do
   it 'provides Studio location in AppData' do
     expect(ENV).to receive(:fetch).with('AppData', '.').and_return('C:/Users/User/AppData/Roaming')
 
-    expect(Psdk::Cli::Studio.studio_app_data_location).to eq('C:/Users/User/AppData/Roaming/PokemonStudio')
+    expect(Psdk::Cli::Studio.studio_app_data_location).to eq(
+      'C:/Users/User/AppData/Roaming/../Local/Programs/pokemon-studio'
+    )
   end
 
   it 'provides all common locations' do
@@ -13,7 +15,7 @@ RSpec.describe Psdk::Cli::Studio do
     allow(ENV).to receive(:[]).with('AppData').and_return('C:/Users/User/AppData/Roaming')
     allow(Dir).to receive(:[]) { |path| path.include?('Volumes') ? ['/Volumes/HDD'] : ['/dev/sda1'] }
 
-    options = ['/Applications/PokemonStudio.app', 'C:/Users/User/AppData/Roaming/PokemonStudio',
+    options = ['/Applications/PokemonStudio.app', 'C:/Users/User/AppData/Roaming/../Local/Programs/pokemon-studio',
                '/Volumes/HDD/projects/PokemonStudio', '/dev/sda1/projects/PokemonStudio',
                'C:/Projects/PokemonStudio']
     expect(Psdk::Cli::Studio.common_studio_location).to eq(options)

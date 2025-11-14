@@ -75,7 +75,7 @@ module Psdk
       # Get the location of Studio in appdata
       # @return [String]
       def studio_app_data_location
-        return File.join(ENV.fetch('AppData', '.'), 'PokemonStudio') # TODO: Find the actual install location in Windows
+        return File.join(ENV.fetch('AppData', '.'), '../Local/Programs/pokemon-studio')
       end
     end
   end

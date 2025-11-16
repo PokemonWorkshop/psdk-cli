@@ -2,6 +2,7 @@
 
 require_relative '../cli/configuration'
 require_relative 'studio'
+require_relative 'psdk'
 
 module Psdk
   module Cli
@@ -27,22 +28,17 @@ module Psdk
 
       # Search and show the global PSDK version
       def search_and_show_global_psdk_version
-        global_config = Configuration.get(:global)
-        Studio.find_and_save_path if global_config.studio_path.empty?
-        psdk_binaries_path = Studio.psdk_binaries_path(global_config.studio_path)
-        return show_global_psdk_version(psdk_binaries_path) if psdk_binaries_path
-
-        puts "\r[Error] Current Pokemon Studio path does not contain psdk-binaries"
-        global_config.studio_path = ''
-        raise ArgumentError
-      rescue ArgumentError
-        retry
+        PSDK.ensure_repository_cloned
+        psdk_path = PSDK.repository_path
+        show_global_psdk_version(psdk_path)
+        git_data = load_git_data(psdk_path)
+        puts "Global PSDK git Target: #{git_data}"
       end
 
       # Show the global PSDK version
-      # @param psdk_binaries_path [String]
-      def show_global_psdk_version(psdk_binaries_path)
-        version_string = version_to_string(load_version_integer(File.join(psdk_binaries_path, 'pokemonsdk')))
+      # @param psdk_path [String] Path to the PSDK repository
+      def show_global_psdk_version(psdk_path)
+        version_string = version_to_string(load_version_integer(psdk_path))
         puts "\rGlobal PSDK version: #{version_string}       "
       end
 
@@ -62,7 +58,15 @@ module Psdk
 
       # Show that there's no local PSDK version
       def show_no_local_psdk_version
-        puts "Project PSDK Version: Studio's PSDK version"
+        Studio.find_and_save_path(:local) if Configuration.get(:local).studio_path.empty?
+        psdk_binaries_path = Studio.psdk_binaries_path(Configuration.get(:local).studio_path)
+        unless psdk_binaries_path
+          puts 'Project PSDK Version: Cannot locate Pokémon Studio or local repository...'
+          exit(1)
+        end
+
+        version_string = version_to_string(load_version_integer(File.join(psdk_binaries_path, 'pokemonsdk')))
+        puts "Project PSDK Version: #{version_string} (Pokémon Studio)"
       end
 
       # Load the Git data if any
@@ -72,8 +76,8 @@ module Psdk
         Dir.chdir(path) do
           return '' unless Dir.exist?('.git') || Dir.exist?('../.git')
 
-          commit = `git log --oneline -n 1`
-          branch = `git branch --show-current`
+          commit = `git log --oneline -n 1`.chomp
+          branch = `git branch --show-current`.chomp
           return "[#{branch}] #{commit}" unless branch.empty?
 
           return "[!detached] #{commit}"

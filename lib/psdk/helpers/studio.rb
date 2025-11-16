@@ -9,14 +9,18 @@ module Psdk
       module_function
 
       # Find and Save Pokemon studio path
-      def find_and_save_path
+      # @param type [:global | :local] where to save the located studio path
+      def find_and_save_path(type)
         locations = common_studio_location.select { |l| Dir.exist?(l) }
         binaries_locations = psdk_binaries_locations
         studio_path = locations.find { |l| binaries_locations.any? { |b| Dir.exist?(File.join(l, b)) } }
-        return ask_and_save_studio_path unless studio_path
+        unless studio_path
+          puts '[Error] failed to locate Pokemon Studio, please set it up manually'
+          exit(1)
+        end
 
         puts "\rLocated Pokemon Studio in `#{studio_path}`"
-        Configuration.get(:global).studio_path = studio_path
+        Configuration.get(type).studio_path = studio_path
         Configuration.save
       end
 
@@ -28,26 +32,6 @@ module Psdk
         return nil unless valid_path
 
         return File.join(path, valid_path)
-      end
-
-      # Ask and save Pokemon Studio path
-      def ask_and_save_studio_path
-        print "\rCould not automatically find Pokémon Studio path, please enter it:"
-        path = $stdin.gets.chomp
-        check_psdk_binaries_in_provided_location(path)
-        Configuration.get(:global).studio_path = path
-        Configuration.save
-      rescue ArgumentError
-        retry
-      end
-
-      # Check if a provided path contains the psdk-binaries
-      # @param path [String]
-      def check_psdk_binaries_in_provided_location(path)
-        return if psdk_binaries_locations.any? { |l| Dir.exist?(File.join(path, l)) }
-
-        puts 'Provided path does not contain psdk-binaries'
-        raise ArgumentError
       end
 
       # Get all the common Pokemon Studio location

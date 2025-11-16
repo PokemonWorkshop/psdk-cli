@@ -11,58 +11,31 @@ RSpec.describe Psdk::Cli::Version do
     Psdk::Cli::Version.run(true)
   end
 
-  it 'search global psdk version' do
-    configuration = Psdk::Cli::Configuration.new({})
-    expect(Psdk::Cli::Configuration).to receive(:get).with(:global).and_return(configuration)
-    expect(Psdk::Cli::Studio).to receive(:find_and_save_path) {
-      configuration.instance_variable_set(:@studio_path, '/path')
-    }
-    expect(Psdk::Cli::Studio).to receive(:psdk_binaries_path).and_return('/path/psdk-binaries')
-    expect(Psdk::Cli::Version).to receive(:show_global_psdk_version).with('/path/psdk-binaries')
-
-    Psdk::Cli::Version.search_and_show_global_psdk_version
-  end
-
-  it 'shows global version' do
-    allow(Dir).to receive(:exist?) { true }
-    configuration = Psdk::Cli::Configuration.new({ studio_path: '/path' })
-    expect(Psdk::Cli::Configuration).to receive(:get).with(:global).and_return(configuration)
-    expect(Psdk::Cli::Studio).to receive(:psdk_binaries_path).and_return('/path/psdk-binaries')
-    expect(Psdk::Cli::Version).to receive(:show_global_psdk_version).with('/path/psdk-binaries')
-
-    Psdk::Cli::Version.search_and_show_global_psdk_version
-  end
-
-  it 'retry if initial path was invalid' do
-    allow(Dir).to receive(:exist?) { true }
-    configuration = Psdk::Cli::Configuration.new({ studio_path: '/invalid_path' })
-    expect(Psdk::Cli::Configuration).to receive(:get).with(:global).and_return(configuration).exactly(2).times
-    allow(Psdk::Cli::Studio).to receive(:psdk_binaries_path) { |path| path == '/invalid_path' ? nil : '/path/psdk-binaries' }
-    expect(Psdk::Cli::Version).to receive(:show_global_psdk_version).with('/path/psdk-binaries')
-    expect(Psdk::Cli::Studio).to receive(:find_and_save_path) {
-      configuration.instance_variable_set(:@studio_path, '/path')
-    }
-    expect(configuration).to receive(:studio_path=).with('').and_call_original
-    expect(Psdk::Cli::Version).to receive(:puts).with(
-      "\r[Error] Current Pokemon Studio path does not contain psdk-binaries"
+  it 'search and show global psdk version based on cloned repository' do
+    expect(Psdk::Cli::PSDK).to receive(:ensure_repository_cloned)
+    expect(Psdk::Cli::PSDK).to receive(:repository_path).and_return('/psdk_repository_path')
+    expect(Psdk::Cli::Version).to receive(:show_global_psdk_version).with('/psdk_repository_path')
+    expect(Psdk::Cli::Version).to receive(:load_git_data).with('/psdk_repository_path').and_return(
+      '[development] aaaaaa commit'
     )
+    expect(Psdk::Cli::Version).to receive(:puts).with('Global PSDK git Target: [development] aaaaaa commit')
 
     Psdk::Cli::Version.search_and_show_global_psdk_version
   end
 
   it 'shows global version' do
-    expect(File).to receive(:exist?).with('/path/psdk-binaries/pokemonsdk/version.txt').and_return(true)
-    expect(File).to receive(:read).with('/path/psdk-binaries/pokemonsdk/version.txt').and_return('4256')
+    expect(File).to receive(:exist?).with('/psdk_repository_path/version.txt').and_return(true)
+    expect(File).to receive(:read).with('/psdk_repository_path/version.txt').and_return('4256')
     expect(Psdk::Cli::Version).to receive(:puts).with("\rGlobal PSDK version: 16.160       ")
 
-    Psdk::Cli::Version.show_global_psdk_version('/path/psdk-binaries')
+    Psdk::Cli::Version.show_global_psdk_version('/psdk_repository_path')
   end
 
-  it 'shows global version even if version.txt was not found' do
-    expect(File).to receive(:exist?).with('/path/psdk-binaries/pokemonsdk/version.txt').and_return(false)
+  it 'shows global version even if version.txt was not found (unlikely)' do
+    expect(File).to receive(:exist?).with('/psdk_repository_path/version.txt').and_return(false)
     expect(Psdk::Cli::Version).to receive(:puts).with("\rGlobal PSDK version: 0       ")
 
-    Psdk::Cli::Version.show_global_psdk_version('/path/psdk-binaries')
+    Psdk::Cli::Version.show_global_psdk_version('/psdk_repository_path')
   end
 
   it 'do not show local version if no project is configured' do
@@ -74,12 +47,55 @@ RSpec.describe Psdk::Cli::Version do
   end
 
   it 'shows "studio\'s version" if no local pokemonsdk folder exists' do
-    configuration = Psdk::Cli::Configuration.new({})
-    expect(Psdk::Cli::Configuration).to receive(:get).with(:local).and_return(configuration)
-    allow(Psdk::Cli::Configuration).to receive(:project_path).and_return('/project')
-    expect(Dir).to receive(:exist?).with('/project/pokemonsdk').and_return(false)
-    expect(Psdk::Cli::Version).to receive(:puts).with("Project PSDK Version: Studio's PSDK version")
+    allow(Dir).to receive(:exist?).with('/studio_path').and_return(true)
 
+    configuration = Psdk::Cli::Configuration.new({ studio_path: '/studio_path' })
+    allow(Psdk::Cli::Configuration).to receive(:get).with(:local).and_return(configuration)
+    allow(Psdk::Cli::Configuration).to receive(:project_path).and_return('/project')
+
+    expect(Dir).to receive(:exist?).with('/project/pokemonsdk').and_return(false)
+    expect(Psdk::Cli::Studio).to receive(:psdk_binaries_path).with('/studio_path').and_return(
+      '/studio_path/psdk-binaries'
+    )
+    expect(File).to receive(:exist?).with('/studio_path/psdk-binaries/pokemonsdk/version.txt').and_return(true)
+    expect(File).to receive(:read).with('/studio_path/psdk-binaries/pokemonsdk/version.txt').and_return('4256')
+
+    expect(Psdk::Cli::Version).to receive(:puts).with('Project PSDK Version: 16.160 (Pokémon Studio)')
+    Psdk::Cli::Version.search_and_show_local_psdk_version
+  end
+
+  it 'shows error for local project if Studio and repository are not found' do
+    allow(Dir).to receive(:exist?).with('/studio_path').and_return(true)
+
+    configuration = Psdk::Cli::Configuration.new({ studio_path: '/studio_path' })
+    allow(Psdk::Cli::Configuration).to receive(:get).with(:local).and_return(configuration)
+    allow(Psdk::Cli::Configuration).to receive(:project_path).and_return('/project')
+
+    expect(Dir).to receive(:exist?).with('/project/pokemonsdk').and_return(false)
+    expect(Psdk::Cli::Studio).to receive(:psdk_binaries_path).with('/studio_path').and_return(nil)
+
+    expect(Psdk::Cli::Version).to receive(:puts).with(
+      'Project PSDK Version: Cannot locate Pokémon Studio or local repository...'
+    )
+    expect(Psdk::Cli::Version).to receive(:exit).with(1) { raise 'exit 1' }
+    expect { Psdk::Cli::Version.search_and_show_local_psdk_version }.to raise_error(RuntimeError, 'exit 1')
+  end
+
+  it 'calls Studio.find_and_save_path if studio path is empty when searching local psdk version' do
+    configuration = Psdk::Cli::Configuration.new({})
+    allow(Dir).to receive(:exist?).with('/studio_path').and_return(true)
+    expect(Psdk::Cli::Studio).to receive(:find_and_save_path) { configuration.studio_path = '/studio_path' }
+    allow(Psdk::Cli::Configuration).to receive(:get).with(:local).and_return(configuration)
+    allow(Psdk::Cli::Configuration).to receive(:project_path).and_return('/project')
+
+    expect(Dir).to receive(:exist?).with('/project/pokemonsdk').and_return(false)
+    expect(Psdk::Cli::Studio).to receive(:psdk_binaries_path).with('/studio_path').and_return(
+      '/studio_path/psdk-binaries'
+    )
+    expect(File).to receive(:exist?).with('/studio_path/psdk-binaries/pokemonsdk/version.txt').and_return(true)
+    expect(File).to receive(:read).with('/studio_path/psdk-binaries/pokemonsdk/version.txt').and_return('4256')
+
+    expect(Psdk::Cli::Version).to receive(:puts).with('Project PSDK Version: 16.160 (Pokémon Studio)')
     Psdk::Cli::Version.search_and_show_local_psdk_version
   end
 

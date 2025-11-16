@@ -29,49 +29,6 @@ RSpec.describe Psdk::Cli::Studio do
     expect(Psdk::Cli::Studio.common_studio_location).to eq(options)
   end
 
-  it 'checks if psdk-binaries exists in provided location' do
-    allow(Dir).to receive(:exist?) { |path| path == '/path/resources/psdk-binaries' }
-
-    expect { Psdk::Cli::Studio.check_psdk_binaries_in_provided_location('/path') }.not_to raise_error
-  end
-
-  it 'raises ArgumentError if the psdk-binaries does not exists in provided location' do
-    allow(Dir).to receive(:exist?) { false }
-    expect(Psdk::Cli::Studio).to receive(:puts).with('Provided path does not contain psdk-binaries')
-
-    expect { Psdk::Cli::Studio.check_psdk_binaries_in_provided_location('/path') }.to raise_error(ArgumentError)
-  end
-
-  it 'asks for Studio path' do
-    configuration = Psdk::Cli::Configuration.new({})
-    allow(Dir).to receive(:exist?) { |path| path == '/path/resources/psdk-binaries' }
-    allow($stdin).to receive(:gets).and_return("/path\n")
-    expect(Psdk::Cli::Studio).to receive(:print).with(
-      "\rCould not automatically find Pokémon Studio path, please enter it:"
-    )
-    expect(Psdk::Cli::Configuration).to receive(:get).with(:global).and_return(configuration)
-    expect(configuration).to receive(:studio_path=).with('/path')
-    expect(Psdk::Cli::Configuration).to receive(:save)
-
-    Psdk::Cli::Studio.ask_and_save_studio_path
-  end
-
-  it 'asks for Studio path until a valid one is provided' do
-    configuration = Psdk::Cli::Configuration.new({})
-    i = 0
-    allow(Dir).to receive(:exist?) { |path| path == '/valid_path/resources/psdk-binaries' }
-    allow($stdin).to receive(:gets) { (i += 1) == 1 ? "/path\n" : "/valid_path\n" }
-    expect(Psdk::Cli::Studio).to receive(:puts).with('Provided path does not contain psdk-binaries').exactly(1).times
-    expect(Psdk::Cli::Studio).to(
-      receive(:print).with("\rCould not automatically find Pokémon Studio path, please enter it:").exactly(2).times
-    )
-    expect(Psdk::Cli::Configuration).to receive(:get).with(:global).and_return(configuration).exactly(1).times
-    expect(configuration).to receive(:studio_path=).with('/valid_path')
-    expect(Psdk::Cli::Configuration).to receive(:save)
-
-    Psdk::Cli::Studio.ask_and_save_studio_path
-  end
-
   it 'returns the psdk-binaries path based on studio path' do
     allow(Dir).to receive(:exist?) { |path| path == '/path/resources/psdk-binaries' }
 
@@ -94,28 +51,32 @@ RSpec.describe Psdk::Cli::Studio do
     expect(configuration).to receive(:studio_path=).with('/Applications/PokemonStudio.app')
     expect(Psdk::Cli::Configuration).to receive(:save)
 
-    Psdk::Cli::Studio.find_and_save_path
+    Psdk::Cli::Studio.find_and_save_path(:global)
   end
 
-  it 'ask Studio path if target folder does not contains psdk-binaries' do
+  it 'exits with error if target folder does not contains psdk-binaries' do
     valid_paths = ['/Applications/PokemonStudio.app']
     allow(Dir).to receive(:exist?) { |path| valid_paths.include?(path) }
-    expect(Psdk::Cli::Studio).not_to receive(:puts)
-    expect(Psdk::Cli::Configuration).not_to receive(:get).with(:global)
+    expect(Psdk::Cli::Configuration).not_to receive(:get).with(:local)
     expect(Psdk::Cli::Configuration).not_to receive(:save)
-    expect(Psdk::Cli::Studio).to receive(:ask_and_save_studio_path)
+    expect(Psdk::Cli::Studio).to receive(:exit).with(1) { raise 'exit 1' }
+    expect(Psdk::Cli::Studio).to receive(:puts).with(
+      '[Error] failed to locate Pokemon Studio, please set it up manually'
+    )
 
-    Psdk::Cli::Studio.find_and_save_path
+    expect { Psdk::Cli::Studio.find_and_save_path(:local) }.to raise_error(RuntimeError, 'exit 1')
   end
 
-  it 'ask Studio path if no common path is found' do
+  it 'exits with error Studio path if no common path is found' do
     allow(Dir).to receive(:exist?) { false }
-    expect(Psdk::Cli::Studio).not_to receive(:puts)
-    expect(Psdk::Cli::Configuration).not_to receive(:get).with(:global)
+    expect(Psdk::Cli::Configuration).not_to receive(:get).with(:local)
     expect(Psdk::Cli::Configuration).not_to receive(:save)
-    expect(Psdk::Cli::Studio).to receive(:ask_and_save_studio_path)
+    expect(Psdk::Cli::Studio).to receive(:exit).with(1) { raise 'exit 1' }
+    expect(Psdk::Cli::Studio).to receive(:puts).with(
+      '[Error] failed to locate Pokemon Studio, please set it up manually'
+    )
 
-    Psdk::Cli::Studio.find_and_save_path
+    expect { Psdk::Cli::Studio.find_and_save_path(:local) }.to raise_error(RuntimeError, 'exit 1')
   end
 end
 # rubocop:enable Metrics/BlockLength

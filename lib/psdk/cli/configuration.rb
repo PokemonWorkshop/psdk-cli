@@ -9,8 +9,11 @@ module Psdk
       # Filename of the project configuration
       PROJECT_CONFIGURATION_FILENAME = '.psdk-cli.yml'
 
+      # Path where all the global configuration are stored
+      PATH = ENV.fetch('PSDK_CLI_DIR', Dir.home || ENV['USERPROFILE'] || '~')
+
       # Filename of the global configuration
-      GLOBAL_CONFIGURATION_FILENAME = File.join(Dir.home || ENV['USERPROFILE'] || '~', '.psdk-cli/config.yml')
+      GLOBAL_CONFIGURATION_FILENAME = File.join(PATH, '.psdk-cli/config.yml')
 
       # Create a new configuration
       # @param hash [Hash] configuration hash

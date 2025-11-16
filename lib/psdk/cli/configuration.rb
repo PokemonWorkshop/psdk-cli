@@ -93,6 +93,7 @@ module Psdk
 
         # Save the configuration
         def save
+          make_config_global_dir
           File.write(GLOBAL_CONFIGURATION_FILENAME, YAML.dump(@global.to_h))
           return unless @local && @project_path
 
@@ -104,6 +105,13 @@ module Psdk
         end
 
         private
+
+        def make_config_global_dir
+          dirname = File.dirname(GLOBAL_CONFIGURATION_FILENAME)
+          return if Dir.exist?(dirname)
+
+          Dir.mkdir(dirname)
+        end
 
         def load_hash(path)
           return {} unless File.exist?(path)

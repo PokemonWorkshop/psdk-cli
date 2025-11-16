@@ -13,8 +13,11 @@ module Psdk
       package_name 'psdk-cli'
 
       desc 'version', 'show the psdk-cli version'
+      method_option :no_psdk_version, type: :boolean, aliases: '--no-psdk-version',
+                                      desc: 'do not search and show PSDK version'
       def version
-        puts "psdk-cli v#{VERSION}"
+        require_relative 'helpers/version'
+        Version.run(options[:no_psdk_version])
       end
 
       desc 'plugin', 'manage PSDK plugins'

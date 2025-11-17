@@ -19,7 +19,7 @@ module Psdk
           exit(1)
         end
 
-        puts "\rLocated Pokemon Studio in `#{studio_path}`"
+        puts "Located Pokemon Studio in `#{studio_path}`"
         Configuration.get(type).studio_path = studio_path
         Configuration.save
       end

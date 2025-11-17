@@ -4,7 +4,7 @@
 RSpec.describe Psdk::Cli::Version do
   it 'only prints the cli version' do
     expect(Psdk::Cli::Version).to receive(:puts).with("psdk-cli v#{Psdk::Cli::VERSION}")
-    expect(Psdk::Cli::Version).not_to receive(:print).with('Searching for PSDK version...')
+    expect(Psdk::Cli::Version).not_to receive(:print).with("Searching for PSDK version...\r")
     expect(Psdk::Cli::Version).not_to receive(:search_and_show_global_psdk_version)
     expect(Psdk::Cli::Version).not_to receive(:search_and_show_local_psdk_version)
 
@@ -26,14 +26,14 @@ RSpec.describe Psdk::Cli::Version do
   it 'shows global version' do
     expect(File).to receive(:exist?).with('/psdk_repository_path/version.txt').and_return(true)
     expect(File).to receive(:read).with('/psdk_repository_path/version.txt').and_return('4256')
-    expect(Psdk::Cli::Version).to receive(:puts).with("\rGlobal PSDK version: 16.160       ")
+    expect(Psdk::Cli::Version).to receive(:puts).with('Global PSDK version: 16.160       ')
 
     Psdk::Cli::Version.show_global_psdk_version('/psdk_repository_path')
   end
 
   it 'shows global version even if version.txt was not found (unlikely)' do
     expect(File).to receive(:exist?).with('/psdk_repository_path/version.txt').and_return(false)
-    expect(Psdk::Cli::Version).to receive(:puts).with("\rGlobal PSDK version: 0       ")
+    expect(Psdk::Cli::Version).to receive(:puts).with('Global PSDK version: 0       ')
 
     Psdk::Cli::Version.show_global_psdk_version('/psdk_repository_path')
   end
@@ -150,7 +150,7 @@ RSpec.describe Psdk::Cli::Version do
 
   it 'shows calls the main show function when no_psdk_version=false' do
     expect(Psdk::Cli::Version).to receive(:puts).with("psdk-cli v#{Psdk::Cli::VERSION}")
-    expect(Psdk::Cli::Version).to receive(:print).with('Searching for PSDK version...')
+    expect(Psdk::Cli::Version).to receive(:print).with("Searching for PSDK version...\r")
     expect(Psdk::Cli::Version).to receive(:search_and_show_global_psdk_version)
     expect(Psdk::Cli::Version).to receive(:search_and_show_local_psdk_version)
 

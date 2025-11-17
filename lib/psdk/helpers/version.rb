@@ -16,7 +16,7 @@ module Psdk
         puts "psdk-cli v#{VERSION}"
         return if no_psdk_version
 
-        print 'Searching for PSDK version...'
+        print "Searching for PSDK version...\r"
         search_and_show_psdk_version
       end
 
@@ -39,7 +39,7 @@ module Psdk
       # @param psdk_path [String] Path to the PSDK repository
       def show_global_psdk_version(psdk_path)
         version_string = version_to_string(load_version_integer(psdk_path))
-        puts "\rGlobal PSDK version: #{version_string}       "
+        puts "Global PSDK version: #{version_string}       "
       end
 
       # Search and show the local PSDK version

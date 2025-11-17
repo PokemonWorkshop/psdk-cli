@@ -46,7 +46,7 @@ RSpec.describe Psdk::Cli::Studio do
     valid_paths = ['/Applications/PokemonStudio.app',
                    '/Applications/PokemonStudio.app/Contents/Resources/psdk-binaries']
     allow(Dir).to receive(:exist?) { |path| valid_paths.include?(path) }
-    expect(Psdk::Cli::Studio).to receive(:puts).with("\rLocated Pokemon Studio in `/Applications/PokemonStudio.app`")
+    expect(Psdk::Cli::Studio).to receive(:puts).with('Located Pokemon Studio in `/Applications/PokemonStudio.app`')
     expect(Psdk::Cli::Configuration).to receive(:get).with(:global).and_return(configuration)
     expect(configuration).to receive(:studio_path=).with('/Applications/PokemonStudio.app')
     expect(Psdk::Cli::Configuration).to receive(:save)

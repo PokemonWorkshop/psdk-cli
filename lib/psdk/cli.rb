@@ -20,6 +20,12 @@ module Psdk
         Version.run(options[:no_psdk_version])
       end
 
+      desc 'update', 'update the psdk-cli'
+      def update
+        require_relative 'helpers/version_update'
+        VersionUpdate.check_and_update
+      end
+
       desc 'plugin', 'manage PSDK plugins'
       subcommand 'plugin', Plugin
     end

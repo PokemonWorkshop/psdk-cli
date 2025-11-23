@@ -19,7 +19,12 @@ RSpec.describe Psdk::Cli::VersionUpdate do
     end
 
     context 'when a new version is available' do
+      before do
+        allow($stdin).to receive(:gets).and_return("y\n")
+      end
+
       it 'updates the gem' do
+        expect(Psdk::Cli::VersionUpdate).to receive(:print).with('Do you want to update psdk-cli? [Y/n] ')
         expect(Psdk::Cli::VersionUpdate).to receive(:system).with('gem install psdk-cli')
         Psdk::Cli::VersionUpdate.check_and_update
       end
@@ -27,6 +32,17 @@ RSpec.describe Psdk::Cli::VersionUpdate do
       it 'exits after update' do
         expect(Psdk::Cli::VersionUpdate).to receive(:exit)
         Psdk::Cli::VersionUpdate.check_and_update
+      end
+
+      context 'when user declines update' do
+        before do
+          allow($stdin).to receive(:gets).and_return("n\n")
+        end
+
+        it 'does not update the gem' do
+          expect(Psdk::Cli::VersionUpdate).not_to receive(:system)
+          Psdk::Cli::VersionUpdate.check_and_update
+        end
       end
     end
 

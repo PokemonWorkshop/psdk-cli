@@ -43,6 +43,10 @@ module Psdk
 
       # Update the psdk-cli gem
       def update_gem
+        print 'Do you want to update psdk-cli? [Y/n] '
+        response = $stdin.gets.chomp
+        return unless response.empty? || response.casecmp('y').zero?
+
         puts 'Updating psdk-cli...'
         system('gem install psdk-cli')
         puts 'Update complete. Please restart the command.'

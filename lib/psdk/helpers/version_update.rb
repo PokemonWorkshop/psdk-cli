@@ -16,7 +16,8 @@ module Psdk
 
         compare_and_update_versions(local_version, remote_version)
       rescue StandardError => e
-        puts "Failed to check for updates: #{e.message}"
+        $stderr.puts "Failed to update: #{e.message}"
+        exit(1)
       end
 
       # Compare local and remote versions and update if necessary
@@ -48,8 +49,10 @@ module Psdk
         return unless response.empty? || response.casecmp('y').zero?
 
         puts 'Updating psdk-cli...'
-        system('gem install psdk-cli')
-        puts 'Update complete. Please restart the command.'
+        result = system('gem install psdk-cli')
+        raise 'gem install psdk-cli failed' unless result
+
+        puts 'Update complete.'
         exit
       end
     end

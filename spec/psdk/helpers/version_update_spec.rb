@@ -21,11 +21,20 @@ RSpec.describe Psdk::Cli::VersionUpdate do
     context 'when a new version is available' do
       before do
         allow($stdin).to receive(:gets).and_return("y\n")
+        allow(Psdk::Cli::VersionUpdate).to receive(:system).and_return(true)
       end
 
       it 'updates the gem' do
         expect(Psdk::Cli::VersionUpdate).to receive(:print).with('Do you want to update psdk-cli? [Y/n] ')
         expect(Psdk::Cli::VersionUpdate).to receive(:system).with('gem install psdk-cli')
+        Psdk::Cli::VersionUpdate.check_and_update
+      end
+
+      it 'logs an error and exits if update fails' do
+        expect(Psdk::Cli::VersionUpdate).to receive(:print).with('Do you want to update psdk-cli? [Y/n] ')
+        expect(Psdk::Cli::VersionUpdate).to receive(:system).with('gem install psdk-cli').and_return(false)
+        expect(Psdk::Cli::VersionUpdate).to receive(:exit).with(1)
+        expect($stderr).to receive(:puts).with('Failed to update: gem install psdk-cli failed')
         Psdk::Cli::VersionUpdate.check_and_update
       end
 
@@ -68,8 +77,8 @@ RSpec.describe Psdk::Cli::VersionUpdate do
       let(:gem_search_output) { "No match found\n" }
 
       it 'rescues the error and prints a message' do
-        expect(Psdk::Cli::VersionUpdate).to receive(:puts).with(
-          'Failed to check for updates: Could not find psdk-cli in remote gems'
+        expect($stderr).to receive(:puts).with(
+          'Failed to update: Could not find psdk-cli in remote gems'
         )
         Psdk::Cli::VersionUpdate.check_and_update
       end

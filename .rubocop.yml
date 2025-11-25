@@ -11,3 +11,6 @@ Style/StringLiteralsInInterpolation:
 
 Style/RedundantReturn:
   Enabled: false
+
+Style/StderrPuts:
+  Enabled: false

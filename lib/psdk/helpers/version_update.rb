@@ -24,7 +24,7 @@ module Psdk
       # @param local_version [String] The currently installed version
       # @param remote_version [String] The latest version available
       def compare_and_update_versions(local_version, remote_version)
-        if remote_version > local_version
+        if Gem::Version.new(remote_version) > Gem::Version.new(local_version)
           puts "New version available: #{remote_version} (current: #{local_version})"
           update_gem
         else

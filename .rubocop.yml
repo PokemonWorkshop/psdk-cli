@@ -2,8 +2,6 @@ AllCops:
   TargetRubyVersion: 3.2
   NewCops: enable
   SuggestExtensions: false
-  Exclude:
-    - 'spec/**/*'
 
 Style/StringLiterals:
   EnforcedStyle: single_quotes

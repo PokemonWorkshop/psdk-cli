@@ -13,13 +13,8 @@ module Psdk
                              desc: 'delete local pokemonsdk folder'
       def studio
         ensure_project
-        # should_delete_local_pokemonsdk_folder = options[:delete]
-        # if should_delete_local_pokemonsdk_folder
-        #   # TODO: delete pokemonsdk folder from project, remove submodule if it is a submodule
-        # else
-        #   # TODO: rename pokemonsdk folder from project, remove submodule if it is a submodule
-        # end
-        puts options[:delete]
+        require_relative '../helpers/psdk'
+        PSDK.unuse_local_pokemonsdk(delete: options[:delete])
       end
 
       desc 'version PSDK_VERSION', 'make the project use a specific PSDK version'

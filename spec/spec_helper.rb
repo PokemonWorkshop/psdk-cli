@@ -4,6 +4,7 @@ require 'psdk/cli'
 require 'psdk/cli/configuration'
 require 'psdk/helpers/studio'
 require 'psdk/helpers/version'
+require 'psdk/helpers/900 Yuki__VD'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

@@ -22,10 +22,9 @@ RSpec.describe Psdk::Cli::Plugin do # rubocop:disable Metrics/BlockLength
     end
 
     context 'when not in a PSDK project' do
-      let(:config_mock) { double('Configuration', project_path: nil) }
-
       before do
-        allow(Psdk::Cli::Configuration).to receive(:get).with(:local).and_return(config_mock)
+        allow(Psdk::Cli::Configuration).to receive(:get).with(:local)
+        allow(Psdk::Cli::Configuration).to receive(:project_path).and_return(nil)
       end
 
       it 'exits with 1 and prints an error' do
@@ -36,10 +35,9 @@ RSpec.describe Psdk::Cli::Plugin do # rubocop:disable Metrics/BlockLength
   end
 
   describe '#build' do # rubocop:disable Metrics/BlockLength
-    let(:config_mock) { double('Configuration', project_path: '/path/to/project') }
-
     before do
-      allow(Psdk::Cli::Configuration).to receive(:get).with(:local).and_return(config_mock)
+      allow(Psdk::Cli::Configuration).to receive(:get).with(:local)
+      allow(Psdk::Cli::Configuration).to receive(:project_path).and_return('/path/to/project')
       allow(Psdk::Helpers::PluginManager).to receive(:build)
       subject.options = { out_dir: '.' }
     end

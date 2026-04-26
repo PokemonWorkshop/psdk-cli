@@ -23,7 +23,7 @@ module Psdk
         end
 
         # Start the building process
-        def build # rubocop:disable Metrics/AbcSize,Metrics/MethodLength
+        def build # rubocop:disable Metrics/MethodLength
           puts "--- Starting build for plugin '#{@name}' ---"
           if @in_project
             puts '[INFO] Operating inside a PSDK project.'
@@ -31,31 +31,20 @@ module Psdk
             puts '[INFO] Operating in standalone mode (outside a PSDK project).'
           end
 
-          @config = load_plugin_configuration
-          plugin_filename = File.join(@out_dir, "#{@config.name}.#{PLUGIN_FILE_EXT}")
-          tmp_filename = "#{plugin_filename}.tmp"
+          project_root = @in_project.is_a?(String) ? @in_project : Dir.pwd
+          out_dir = File.absolute_path(@out_dir)
 
-          puts "Creating temporary plugin file: #{tmp_filename}"
-          @yuki_vd = Yuki::VD.new(tmp_filename, :write)
+          Dir.chdir(project_root) do
+            @config = load_plugin_configuration
+            plugin_filename = File.join(out_dir, "#{@config.name}.#{PLUGIN_FILE_EXT}")
+            tmp_filename = "#{plugin_filename}.tmp"
 
-          add_scripts
-          add_files
-          add_testers
+            build_internal(tmp_filename)
+            compute_sha512(tmp_filename)
+            write_config_an_rename_file(tmp_filename, plugin_filename)
 
-          @yuki_vd.close
-
-          puts 'Computing SHA512 of the generated package...'
-          filesize = File.binread(tmp_filename, Yuki::VD::POINTER_SIZE).unpack1(Yuki::VD::UNPACK_METHOD) - Yuki::VD::POINTER_SIZE
-          filedata = File.binread(tmp_filename, filesize, Yuki::VD::POINTER_SIZE)
-          @config.sha512 = Digest::SHA512.hexdigest(filedata)
-
-          puts 'Writing final configuration with SHA512 to package...'
-          @yuki_vd = Yuki::VD.new(tmp_filename, :update)
-          @yuki_vd.write_data("\x00", Marshal.dump(@config))
-          @yuki_vd.close
-
-          File.rename(tmp_filename, plugin_filename)
-          puts "\e[32m[SUCCESS]\e[0m Built #{@config.name} at #{plugin_filename}"
+            puts "\e[32m[SUCCESS]\e[0m Built #{@config.name} at #{plugin_filename}"
+          end
         end
 
         private
@@ -75,6 +64,19 @@ module Psdk
           # Outside, it's `scripts/**/*.rb`
           # In both cases, the folder is `scripts` relative to base_dir (or `script` according to some docs, we check both or use 'scripts') # rubocop:disable Layout/LineLength
           return 'scripts'
+        end
+
+        # Internal plugin build process
+        # @param tmp_filename [String] temporary filename of the .psdkplug file (before SHA512 computation)
+        def build_internal(tmp_filename)
+          puts "Creating temporary plugin file: #{tmp_filename}"
+          @yuki_vd = Yuki::VD.new(tmp_filename, :write)
+
+          add_scripts
+          add_files
+          add_testers
+
+          @yuki_vd.close
         end
 
         # Function that adds all the scripts for the plugin
@@ -98,17 +100,13 @@ module Psdk
 
         # Function that add all the files for the plugin
         def add_files
-          project_root = @in_project.is_a?(String) ? @in_project : Dir.pwd
+          filenames = (@config.added_files || []).flat_map { |dirspec| Dir[dirspec] }.select { |f| File.file?(f) }
 
-          Dir.chdir(project_root) do
-            filenames = (@config.added_files || []).flat_map { |dirspec| Dir[dirspec] }.select { |f| File.file?(f) }
-
-            puts "Found #{filenames.size} resource files to pack."
-            filenames.each do |filename|
-              data = File.binread(filename)
-              puts "  - Packing file: #{filename}"
-              @yuki_vd.write_data(filename, data)
-            end
+          puts "Found #{filenames.size} resource files to pack."
+          filenames.each do |filename|
+            data = File.binread(filename)
+            puts "  - Packing file: #{filename}"
+            @yuki_vd.write_data(filename, data)
           end
         end
 
@@ -139,25 +137,33 @@ module Psdk
 
         # Load the plugin configuration
         # @return [Psdk::Helpers::PluginManager::Config]
-        def load_plugin_configuration # rubocop:disable Metrics/AbcSize,Metrics/MethodLength
+        def load_plugin_configuration
           config_path = File.join(base_dir, 'config.yml')
           raise "Configuration file not found at #{config_path}" unless File.exist?(config_path)
 
           puts "Loading configuration from #{config_path}"
-          yaml_content = YAML.unsafe_load(File.read(config_path))
+          return YAML.unsafe_load(File.read(config_path))
+        end
 
-          # Populate Config object
-          config = Psdk::Helpers::PluginManager::Config.new
-          config.name = yaml_content['name'] || @name
-          config.authors = yaml_content['authors'] || []
-          config.version = yaml_content['version'] || '1.0.0'
-          config.deps = yaml_content['deps'] || []
-          config.psdk_compatibility_script = yaml_content['psdk_compatibility_script']
-          config.retry_psdk_compatibility_after_plugin_load = yaml_content['retry_psdk_compatibility_after_plugin_load']
-          config.additional_compatibility_script = yaml_content['additional_compatibility_script']
-          config.added_files = yaml_content['added_files'] || []
+        # Compute the SHA512 hash of the temporary psdkplug
+        # @param tmp_filename [String] filename of the temporary psdkplug
+        def compute_sha512(tmp_filename)
+          puts 'Computing SHA512 of the generated package...'
+          filesize = File.binread(tmp_filename, Yuki::VD::POINTER_SIZE).unpack1(Yuki::VD::UNPACK_METHOD) - Yuki::VD::POINTER_SIZE
+          filedata = File.binread(tmp_filename, filesize, Yuki::VD::POINTER_SIZE)
+          @config.sha512 = Digest::SHA512.hexdigest(filedata)
+        end
 
-          return config
+        # Write the config of the plugin and rename the temporary file to the final plugin filename
+        # @param tmp_filename [String] filename of the temporary psdkplug
+        # @param plugin_filename [String] filename of the final psdkplug
+        def write_config_an_rename_file(tmp_filename, plugin_filename)
+          puts 'Writing final configuration with SHA512 to package...'
+          @yuki_vd = Yuki::VD.new(tmp_filename, :update)
+          @yuki_vd.write_data("\x00", Marshal.dump(@config))
+          @yuki_vd.close
+
+          File.rename(tmp_filename, plugin_filename)
         end
       end
     end

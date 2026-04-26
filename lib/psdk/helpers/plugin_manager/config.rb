@@ -39,3 +39,5 @@ module Psdk
     end
   end
 end
+
+PluginManager = Psdk::Helpers::PluginManager

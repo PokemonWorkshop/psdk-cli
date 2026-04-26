@@ -51,7 +51,13 @@ RSpec.describe Psdk::Helpers::PluginManager::Builder do # rubocop:disable Metric
 
   describe '#build' do # rubocop:disable Metrics/BlockLength
     let(:yuki_vd_mock) { instance_double(Yuki::VD) }
-    let(:config_hash) { { 'name' => 'test_plugin', 'version' => '1.0' } }
+    let(:config_obj) do
+      config = Psdk::Helpers::PluginManager::Config.new
+      config.name = 'test_plugin'
+      config.version = '1.0'
+      config.added_files = ['*.png']
+      config
+    end
 
     before do
       allow($stdout).to receive(:puts)
@@ -62,8 +68,7 @@ RSpec.describe Psdk::Helpers::PluginManager::Builder do # rubocop:disable Metric
       allow(File).to(
         receive(:read).with(/config\.yml/).and_return("name: test_plugin\nversion: 1.0\nadded_files:\n  - '*'\n")
       )
-      config_hash_with_files = config_hash.merge('added_files' => ['*.png'])
-      allow(YAML).to receive(:unsafe_load).and_return(config_hash_with_files)
+      allow(YAML).to receive(:unsafe_load).and_return(config_obj)
       allow(File).to receive(:exist?).and_return(true)
       allow(File).to receive(:binread).and_return("\x00" * 32)
       allow(File).to receive(:rename)

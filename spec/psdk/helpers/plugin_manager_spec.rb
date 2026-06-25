@@ -2,18 +2,18 @@
 
 require 'psdk/helpers/plugin_manager'
 
-RSpec.describe Psdk::Helpers::PluginManager do
+RSpec.describe PluginManager do
   describe '.list' do
     it 'calls List.list_plugins' do
-      expect(Psdk::Helpers::PluginManager::List).to receive(:list_plugins)
+      expect(PluginManager::List).to receive(:list_plugins)
       described_class.list
     end
   end
 
   describe '.build' do
     it 'instantiates Builder and calls build' do
-      builder_mock = instance_double(Psdk::Helpers::PluginManager::Builder)
-      expect(Psdk::Helpers::PluginManager::Builder).to(
+      builder_mock = instance_double(PluginManager::Builder)
+      expect(PluginManager::Builder).to(
         receive(:new).with('my_plugin', in_project: '/path/to/project', out_dir: '.').and_return(builder_mock)
       )
       expect(builder_mock).to receive(:build)
@@ -23,13 +23,13 @@ RSpec.describe Psdk::Helpers::PluginManager do
   end
 end
 
-RSpec.describe Psdk::Helpers::PluginManager::List do
+RSpec.describe PluginManager::List do
   describe '.list_plugins' do
     before do
       allow(File).to receive(:exist?).and_return(true)
       allow(File).to receive(:binread).and_return('mocked_data')
 
-      plugin_mock = Psdk::Helpers::PluginManager::Config.new
+      plugin_mock = PluginManager::Config.new
       plugin_mock.name = 'TestPlugin'
       plugin_mock.version = '1.0'
       plugin_mock.authors = ['Test Author']
@@ -45,14 +45,14 @@ RSpec.describe Psdk::Helpers::PluginManager::List do
   end
 end
 
-RSpec.describe Psdk::Helpers::PluginManager::Builder do # rubocop:disable Metrics/BlockLength
+RSpec.describe PluginManager::Builder do # rubocop:disable Metrics/BlockLength
   let(:plugin_name) { 'my_plugin' }
   subject { described_class.new(plugin_name, in_project: in_project, out_dir: '.') }
 
   describe '#build' do # rubocop:disable Metrics/BlockLength
     let(:yuki_vd_mock) { instance_double(Yuki::VD) }
     let(:config_obj) do
-      config = Psdk::Helpers::PluginManager::Config.new
+      config = PluginManager::Config.new
       config.name = 'test_plugin'
       config.version = '1.0'
       config.added_files = ['*.png']

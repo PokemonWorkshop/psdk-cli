@@ -2,6 +2,7 @@
 
 require 'psdk/cli/plugin'
 require 'psdk/cli/configuration'
+require 'psdk/helpers/plugin_manager'
 
 RSpec.describe Psdk::Cli::Plugin do # rubocop:disable Metrics/BlockLength
   subject { described_class.new }
@@ -12,11 +13,11 @@ RSpec.describe Psdk::Cli::Plugin do # rubocop:disable Metrics/BlockLength
 
       before do
         allow(Psdk::Cli::Configuration).to receive(:get).with(:local).and_return(config_mock)
-        allow(Psdk::Helpers::PluginManager).to receive(:list)
+        allow(PluginManager).to receive(:list)
       end
 
-      it 'calls Psdk::Helpers::PluginManager.list' do
-        expect(Psdk::Helpers::PluginManager).to receive(:list)
+      it 'calls PluginManager.list' do
+        expect(PluginManager).to receive(:list)
         subject.list
       end
     end
@@ -37,7 +38,7 @@ RSpec.describe Psdk::Cli::Plugin do # rubocop:disable Metrics/BlockLength
   describe '#build' do # rubocop:disable Metrics/BlockLength
     before do
       allow(Psdk::Cli::Configuration).to receive(:get).with(:local)
-      allow(Psdk::Helpers::PluginManager).to receive(:build)
+      allow(PluginManager).to receive(:build)
       subject.options = { out_dir: '.' }
     end
 
@@ -46,8 +47,8 @@ RSpec.describe Psdk::Cli::Plugin do # rubocop:disable Metrics/BlockLength
         allow(Psdk::Cli::Configuration).to receive(:project_path).and_return('/path/to/project')
       end
 
-      it 'calls Psdk::Helpers::PluginManager.build with plugin name' do
-        expect(Psdk::Helpers::PluginManager).to(
+      it 'calls PluginManager.build with plugin name' do
+        expect(PluginManager).to(
           receive(:build).with('my_plugin', in_project: '/path/to/project', out_dir: '.')
         )
         subject.build('my_plugin')
@@ -64,13 +65,13 @@ RSpec.describe Psdk::Cli::Plugin do # rubocop:disable Metrics/BlockLength
         allow(Psdk::Cli::Configuration).to receive(:project_path).and_return(nil)
       end
 
-      it 'calls Psdk::Helpers::PluginManager.build with default name' do
-        expect(Psdk::Helpers::PluginManager).to receive(:build).with('.', in_project: nil, out_dir: '.')
+      it 'calls PluginManager.build with default name' do
+        expect(PluginManager).to receive(:build).with('.', in_project: nil, out_dir: '.')
         subject.build(nil)
       end
 
-      it 'calls Psdk::Helpers::PluginManager.build with provided name' do
-        expect(Psdk::Helpers::PluginManager).to receive(:build).with('my_plugin', in_project: nil, out_dir: '.')
+      it 'calls PluginManager.build with provided name' do
+        expect(PluginManager).to receive(:build).with('my_plugin', in_project: nil, out_dir: '.')
         subject.build('my_plugin')
       end
     end
@@ -81,7 +82,7 @@ RSpec.describe Psdk::Cli::Plugin do # rubocop:disable Metrics/BlockLength
       end
 
       it 'builds with in_project: false despite being in a project' do
-        expect(Psdk::Helpers::PluginManager).to receive(:build).with('my_plugin', in_project: false, out_dir: '.')
+        expect(PluginManager).to receive(:build).with('my_plugin', in_project: false, out_dir: '.')
         subject.build('my_plugin')
       end
     end

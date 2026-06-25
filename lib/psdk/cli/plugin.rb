@@ -19,7 +19,7 @@ module Psdk
           exit(1)
         end
 
-        Psdk::Helpers::PluginManager.list
+        PluginManager.list
       end
 
       desc 'build [PLUGIN_NAME]', 'Build a plugin (requires to be at the root of the project or the plugin)'
@@ -40,7 +40,7 @@ module Psdk
           exit(1)
         end
 
-        Psdk::Helpers::PluginManager.build(plugin_name, in_project: in_project, out_dir: options[:out_dir])
+        PluginManager.build(plugin_name, in_project: in_project, out_dir: options[:out_dir])
       end
     end
   end

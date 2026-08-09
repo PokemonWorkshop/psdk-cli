@@ -4,6 +4,74 @@ require 'spec_helper'
 require 'psdk/helpers/psdk'
 
 RSpec.describe Psdk::Cli::PSDK do # rubocop:disable Metrics/BlockLength
+  describe 'project version switching' do # rubocop:disable Metrics/BlockLength
+    let(:psdk_path) { '/path/to/project/pokemonsdk' }
+
+    before do
+      allow(described_class).to receive(:ensure_project_repository).and_return(psdk_path)
+      allow(described_class).to receive(:fetch_repository)
+      allow(described_class).to receive(:run_git)
+      allow(described_class).to receive(:show_active_target)
+    end
+
+    it 'checks out the release commit and refreshes submodules' do
+      expect(described_class).to receive(:run_git).with(
+        psdk_path, 'log', '--format=%H', '--extended-regexp', '--grep=^Release 26\\.58$',
+        '--max-count=1', 'origin/release'
+      ).and_return('release-sha')
+      expect(described_class).to receive(:run_git).with(psdk_path, 'checkout', '--detach', 'release-sha')
+      expect(described_class).to receive(:run_git).with(psdk_path, 'submodule', 'update', '--init', '--recursive')
+      expect(described_class).to receive(:show_active_target).with(psdk_path, 'official release 26.58')
+
+      described_class.use_version('26.58')
+    end
+
+    it 'resolves and checks out a specific commit' do
+      expect(described_class).to receive(:run_git).with(
+        psdk_path, 'rev-parse', '--verify', '--end-of-options', 'deadcafe^{commit}'
+      ).and_return('full-sha')
+      expect(described_class).to receive(:run_git).with(psdk_path, 'checkout', '--detach', 'full-sha')
+      expect(described_class).to receive(:show_active_target).with(psdk_path, 'commit deadcafe')
+
+      described_class.use_commit('deadcafe')
+    end
+
+    it 'fetches an MR by ID and checks out its local branch' do
+      expect(described_class).to receive(:run_git).with(
+        psdk_path, 'fetch', 'origin',
+        '+refs/merge-requests/42/head:refs/remotes/origin/merge-requests/42'
+      )
+      expect(described_class).to receive(:run_git).with(
+        psdk_path, 'checkout', '-B', 'mr-42', 'refs/remotes/origin/merge-requests/42'
+      )
+      expect(described_class).to receive(:show_active_target).with(psdk_path, 'merge request !42')
+
+      described_class.use_mr('42')
+    end
+
+    it 'checks out the latest development commit' do
+      expect(described_class).to receive(:run_git).with(
+        psdk_path, 'checkout', '-B', 'development', 'origin/development'
+      )
+      expect(described_class).to receive(:show_active_target).with(psdk_path, 'latest development commit')
+
+      described_class.use_latest
+    end
+
+    it 'confirms the active version and commit' do
+      allow(described_class).to receive(:show_active_target).and_call_original
+      allow(described_class).to receive(:run_git).with(
+        psdk_path, 'rev-parse', '--short', 'HEAD'
+      ).and_return('deadcafe')
+      allow(File).to receive(:read).with(File.join(psdk_path, 'version.txt')).and_return('6714')
+      expect(described_class).to receive(:puts).with(
+        'Active PSDK: official release 26.58 (version 26.58, commit deadcafe)'
+      )
+
+      described_class.send(:show_active_target, psdk_path, 'official release 26.58')
+    end
+  end
+
   describe '.unuse_local_pokemonsdk' do # rubocop:disable Metrics/BlockLength
     let(:project_path) { '/path/to/project' }
     let(:psdk_path) { File.join(project_path, 'pokemonsdk') }

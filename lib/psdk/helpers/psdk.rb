@@ -6,7 +6,7 @@ require 'fileutils'
 module Psdk
   module Cli
     # Module holding all the utility to interact with PSDK repository
-    module PSDK
+    module PSDK # rubocop:disable Metrics/ModuleLength
       # Default URL to the PSDK repository
       MAIN_REPOSITORY_URL = 'https://gitlab.com/pokemonsdk/pokemonsdk.git'
 
@@ -27,6 +27,47 @@ module Psdk
       # @return [String]
       def repository_path
         return File.join(Configuration::PATH, 'pokemonsdk')
+      end
+
+      # Make the project use an official PSDK release
+      # @param version [String] release identifier (e.g., "26.58")
+      def use_version(version)
+        switch_project_repository("official release #{version}") do |path|
+          fetch_repository(path)
+          commit = run_git(path, 'log', '--format=%H', '--extended-regexp',
+                           "--grep=^Release #{Regexp.escape(version)}$", '--max-count=1', 'origin/release')
+          raise "PSDK release #{version} was not found" if commit.empty?
+
+          run_git(path, 'checkout', '--detach', commit)
+        end
+      end
+
+      # Make the project use a specific PSDK commit
+      # @param commit [String] commit identifier (e.g., "deadcafe")
+      def use_commit(commit)
+        switch_project_repository("commit #{commit}") do |path|
+          fetch_repository(path)
+          resolved_commit = run_git(path, 'rev-parse', '--verify', '--end-of-options', "#{commit}^{commit}")
+          run_git(path, 'checkout', '--detach', resolved_commit)
+        end
+      end
+
+      # Make the project use the head of a GitLab merge request
+      # @param id [String] merge request ID (e.g., "123")
+      def use_mr(id)
+        switch_project_repository("merge request !#{id}") do |path|
+          ref = "refs/remotes/origin/merge-requests/#{id}"
+          run_git(path, 'fetch', 'origin', "+refs/merge-requests/#{id}/head:#{ref}")
+          run_git(path, 'checkout', '-B', "mr-#{id}", ref)
+        end
+      end
+
+      # Make the project use the latest development commit
+      def use_latest
+        switch_project_repository('latest development commit') do |path|
+          fetch_repository(path)
+          run_git(path, 'checkout', '-B', 'development', 'origin/development')
+        end
       end
 
       # Unuse the local pokemonsdk folder (meaning we want the project to fallback on Pokémon Studio's PSDK)
@@ -106,6 +147,67 @@ module Psdk
         else
           File.rename(psdk_path, new_path)
         end
+      end
+
+      # Run a repository switch: resolve the project's pokemonsdk path, apply the given block,
+      # then refresh submodules and report the active target
+      # @param target [String] human-readable description of the switch target, used in the confirmation message
+      # @yieldparam path [String] path to the project's pokemonsdk repository
+      def switch_project_repository(target)
+        path = ensure_project_repository
+        yield(path)
+        run_git(path, 'submodule', 'update', '--init', '--recursive')
+        show_active_target(path, target)
+      rescue StandardError => e
+        show_switch_error(e)
+      end
+
+      # Ensure the project's pokemonsdk repository exists, cloning it if necessary
+      # @return [String] path to the project's pokemonsdk repository
+      def ensure_project_repository
+        path = File.join(Configuration.project_path, 'pokemonsdk')
+        return path if File.exist?(File.join(path, '.git'))
+
+        raise "#{path} exists but is not a Git repository" if Dir.exist?(path)
+
+        success = system('git', 'clone', MAIN_REPOSITORY_URL, path)
+        raise "Failed to clone pokemonsdk into `#{path}`" unless success
+
+        return path
+      end
+
+      # Fetch the latest refs from origin
+      # @param path [String] path to the repository
+      def fetch_repository(path)
+        run_git(path, 'fetch', 'origin')
+      end
+
+      # Run a git command in the given repository and return its output
+      # @param path [String] path to the repository
+      # @param arguments [Array<String>] git subcommand and its arguments
+      # @return [String] the stripped stdout of the command
+      def run_git(path, *arguments)
+        output = IO.popen(['git', *arguments], chdir: path, &:read)
+        return output.strip if $?.success? # rubocop:disable Style/SpecialGlobalVars
+
+        raise "git #{arguments.join(' ')} failed"
+      end
+
+      # Show the confirmation message for the currently active PSDK target
+      # @param path [String] path to the repository
+      # @param target [String] human-readable description of the active target
+      def show_active_target(path, target)
+        commit = run_git(path, 'rev-parse', '--short', 'HEAD')
+        version = File.read(File.join(path, 'version.txt')).to_i
+        version_string = [version].pack('I>').unpack('C*').join('.').gsub(/^(0\.)+/, '')
+        puts "Active PSDK: #{target} (version #{version_string}, commit #{commit})"
+      end
+
+      # Show the error message when a PSDK switch operation fails
+      # @param error [StandardError] the error that was raised
+      def show_switch_error(error)
+        puts "[Error] Failed to switch PSDK: #{error.message}"
+        exit(1)
       end
     end
   end

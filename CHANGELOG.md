@@ -1,4 +1,8 @@
+# Changelog
+
 ## [Unreleased]
+
+- Implement `psdk-use version`, `commit`, `mr`, and `latest` sub-commands.
 
 ## [0.1.0] - 2025-11-12
 

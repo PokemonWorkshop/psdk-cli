@@ -30,8 +30,10 @@ RSpec.describe Psdk::Cli::Use do
   describe 'public methods' do
     before do
       allow(subject).to receive(:ensure_project)
-      # Suppress puts output for cleaner test runs
-      allow(subject).to receive(:puts)
+      allow(Psdk::Cli::PSDK).to receive(:use_version)
+      allow(Psdk::Cli::PSDK).to receive(:use_commit)
+      allow(Psdk::Cli::PSDK).to receive(:use_mr)
+      allow(Psdk::Cli::PSDK).to receive(:use_latest)
     end
 
     describe '#studio' do
@@ -42,28 +44,32 @@ RSpec.describe Psdk::Cli::Use do
     end
 
     describe '#version' do
-      it 'calls ensure_project' do
+      it 'targets the requested official release' do
+        expect(Psdk::Cli::PSDK).to receive(:use_version).with('24.15')
         subject.version('24.15')
         expect(subject).to have_received(:ensure_project)
       end
     end
 
     describe '#commit' do
-      it 'calls ensure_project' do
-        subject.commit('sha1')
+      it 'targets the requested commit' do
+        expect(Psdk::Cli::PSDK).to receive(:use_commit).with('deadcafe')
+        subject.commit('deadcafe')
         expect(subject).to have_received(:ensure_project)
       end
     end
 
     describe '#mr' do
-      it 'calls ensure_project' do
-        subject.mr('url')
+      it 'targets the requested merge request' do
+        expect(Psdk::Cli::PSDK).to receive(:use_mr).with('42')
+        subject.mr('42')
         expect(subject).to have_received(:ensure_project)
       end
     end
 
     describe '#latest' do
-      it 'calls ensure_project' do
+      it 'targets the latest development commit' do
+        expect(Psdk::Cli::PSDK).to receive(:use_latest)
         subject.latest
         expect(subject).to have_received(:ensure_project)
       end

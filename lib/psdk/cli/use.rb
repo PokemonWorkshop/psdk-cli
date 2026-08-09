@@ -17,32 +17,32 @@ module Psdk
         PSDK.unuse_local_pokemonsdk(delete: options[:delete])
       end
 
-      desc 'version PSDK_VERSION', 'make the project use a specific PSDK version'
+      desc 'version [PSDK_VERSION]', 'make the project use a specific PSDK version'
       def version(psdk_version)
         ensure_project
-        # TODO: ensure pokemonsdk is in the project, checkout the specific version commit (if found)
-        puts psdk_version
+        require_relative '../helpers/psdk'
+        PSDK.use_version(psdk_version)
       end
 
-      desc 'commit SHA1', 'make the project use a specific PSDK commit'
+      desc 'commit [SHA1]', 'make the project use a specific PSDK commit'
       def commit(sha1)
         ensure_project
-        # TODO: ensure pokemonsdk is in the project, checkout the specific commit
-        puts sha1
+        require_relative '../helpers/psdk'
+        PSDK.use_commit(sha1)
       end
 
-      desc 'mr URL', 'make the project use a specific MR'
-      def mr(url)
+      desc 'mr [ID]', 'make the project use a specific MR'
+      def mr(id)
         ensure_project
-        # TODO: ensure pokemonsdk is in the project, checkout the specific commit from the MR
-        # (ensuring remotes are configured)
-        puts url
+        require_relative '../helpers/psdk'
+        PSDK.use_mr(id)
       end
 
       desc 'latest', 'make the project use the latest PSDK commit from development'
       def latest
         ensure_project
-        # TODO: ensure pokemonsdk is in the project, checkout development and pull
+        require_relative '../helpers/psdk'
+        PSDK.use_latest
       end
 
       private

@@ -12,7 +12,7 @@ gem install psdk-cli
 
 ## Usage
 
-In a terminal you can run `psdk-cli` it will list all the available commands. 
+In a terminal you can run `psdk-cli` it will list all the available commands.
 
 Please note that sub command (such as `psdk-cli plugin`) can be executed using the shortcut `psdk-<sub>` (eg. `psdk-plugin` for `psdk-cli plugin`).
 

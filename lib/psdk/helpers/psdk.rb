@@ -170,10 +170,33 @@ module Psdk
 
         raise "#{path} exists but is not a Git repository" if Dir.exist?(path)
 
+        return path if restore_old_pokemonsdk_folder(path)
+
         success = system('git', 'clone', MAIN_REPOSITORY_URL, path)
         raise "Failed to clone pokemonsdk into `#{path}`" unless success
 
         return path
+      end
+
+      # Restore a previously renamed `pokemonsdk_old` folder if it points to the main PSDK repository
+      # @param path [String] path where the pokemonsdk repository should end up
+      # @return [Boolean] whether the folder was restored
+      def restore_old_pokemonsdk_folder(path)
+        old_path = "#{path}_old"
+        return false unless File.exist?(File.join(old_path, '.git'))
+        return false unless remote_matches_main_repository?(old_path)
+
+        File.rename(old_path, path)
+        return true
+      end
+
+      # Check if a repository's origin remote points to the main PSDK repository
+      # @param path [String] path to the repository
+      # @return [Boolean]
+      def remote_matches_main_repository?(path)
+        return run_git(path, 'remote', 'get-url', 'origin') == MAIN_REPOSITORY_URL
+      rescue StandardError
+        return false
       end
 
       # Fetch the latest refs from origin

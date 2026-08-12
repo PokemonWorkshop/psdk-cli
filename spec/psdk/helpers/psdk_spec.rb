@@ -72,6 +72,125 @@ RSpec.describe Psdk::Cli::PSDK do # rubocop:disable Metrics/BlockLength
     end
   end
 
+  describe '.ensure_project_repository' do
+    let(:project_path) { '/path/to/project' }
+    let(:psdk_path) { File.join(project_path, 'pokemonsdk') }
+    let(:old_psdk_path) { "#{psdk_path}_old" }
+
+    before do
+      allow(Psdk::Cli::Configuration).to receive(:project_path).and_return(project_path)
+    end
+
+    context 'when the pokemonsdk folder is already a git repository' do
+      it 'returns the path without cloning or restoring' do
+        allow(File).to receive(:exist?).with(File.join(psdk_path, '.git')).and_return(true)
+        expect(described_class).not_to receive(:restore_old_pokemonsdk_folder)
+        expect(described_class).not_to receive(:system)
+
+        expect(described_class.send(:ensure_project_repository)).to eq(psdk_path)
+      end
+    end
+
+    context 'when the pokemonsdk folder exists but is not a git repository' do
+      it 'raises an error' do
+        allow(File).to receive(:exist?).with(File.join(psdk_path, '.git')).and_return(false)
+        allow(Dir).to receive(:exist?).with(psdk_path).and_return(true)
+
+        expect { described_class.send(:ensure_project_repository) }.to raise_error("#{psdk_path} exists but is not a Git repository")
+      end
+    end
+
+    context 'when a matching pokemonsdk_old folder exists' do
+      it 'restores it instead of cloning' do
+        allow(File).to receive(:exist?).with(File.join(psdk_path, '.git')).and_return(false)
+        allow(Dir).to receive(:exist?).with(psdk_path).and_return(false)
+        expect(described_class).to receive(:restore_old_pokemonsdk_folder).with(psdk_path).and_return(true)
+        expect(described_class).not_to receive(:system)
+
+        expect(described_class.send(:ensure_project_repository)).to eq(psdk_path)
+      end
+    end
+
+    context 'when there is no usable pokemonsdk_old folder' do
+      it 'clones the main repository' do
+        allow(File).to receive(:exist?).with(File.join(psdk_path, '.git')).and_return(false)
+        allow(Dir).to receive(:exist?).with(psdk_path).and_return(false)
+        expect(described_class).to receive(:restore_old_pokemonsdk_folder).with(psdk_path).and_return(false)
+        expect(described_class).to receive(:system).with('git', 'clone', described_class::MAIN_REPOSITORY_URL, psdk_path).and_return(true)
+
+        expect(described_class.send(:ensure_project_repository)).to eq(psdk_path)
+      end
+
+      it 'raises an error when cloning fails' do
+        allow(File).to receive(:exist?).with(File.join(psdk_path, '.git')).and_return(false)
+        allow(Dir).to receive(:exist?).with(psdk_path).and_return(false)
+        allow(described_class).to receive(:restore_old_pokemonsdk_folder).with(psdk_path).and_return(false)
+        allow(described_class).to receive(:system).with('git', 'clone', described_class::MAIN_REPOSITORY_URL, psdk_path).and_return(false)
+
+        expect { described_class.send(:ensure_project_repository) }.to raise_error("Failed to clone pokemonsdk into `#{psdk_path}`")
+      end
+    end
+  end
+
+  describe '.restore_old_pokemonsdk_folder' do
+    let(:psdk_path) { '/path/to/project/pokemonsdk' }
+    let(:old_psdk_path) { "#{psdk_path}_old" }
+
+    context 'when pokemonsdk_old does not exist' do
+      it 'returns false without renaming' do
+        allow(File).to receive(:exist?).with(File.join(old_psdk_path, '.git')).and_return(false)
+        expect(File).not_to receive(:rename)
+
+        expect(described_class.send(:restore_old_pokemonsdk_folder, psdk_path)).to be(false)
+      end
+    end
+
+    context 'when pokemonsdk_old exists but points to another repository' do
+      it 'returns false without renaming' do
+        allow(File).to receive(:exist?).with(File.join(old_psdk_path, '.git')).and_return(true)
+        allow(described_class).to receive(:remote_matches_main_repository?).with(old_psdk_path).and_return(false)
+        expect(File).not_to receive(:rename)
+
+        expect(described_class.send(:restore_old_pokemonsdk_folder, psdk_path)).to be(false)
+      end
+    end
+
+    context 'when pokemonsdk_old exists and points to the main repository' do
+      it 'renames it to pokemonsdk and returns true' do
+        allow(File).to receive(:exist?).with(File.join(old_psdk_path, '.git')).and_return(true)
+        allow(described_class).to receive(:remote_matches_main_repository?).with(old_psdk_path).and_return(true)
+        expect(File).to receive(:rename).with(old_psdk_path, psdk_path)
+
+        expect(described_class.send(:restore_old_pokemonsdk_folder, psdk_path)).to be(true)
+      end
+    end
+  end
+
+  describe '.remote_matches_main_repository?' do
+    let(:psdk_path) { '/path/to/project/pokemonsdk_old' }
+
+    it 'returns true when the origin remote matches the main repository' do
+      allow(described_class).to receive(:run_git).with(psdk_path, 'remote', 'get-url', 'origin')
+                                                   .and_return(described_class::MAIN_REPOSITORY_URL)
+
+      expect(described_class.send(:remote_matches_main_repository?, psdk_path)).to be(true)
+    end
+
+    it 'returns false when the origin remote points elsewhere' do
+      allow(described_class).to receive(:run_git).with(psdk_path, 'remote', 'get-url', 'origin')
+                                                   .and_return('https://gitlab.com/someone-else/pokemonsdk.git')
+
+      expect(described_class.send(:remote_matches_main_repository?, psdk_path)).to be(false)
+    end
+
+    it 'returns false when git raises an error' do
+      allow(described_class).to receive(:run_git).with(psdk_path, 'remote', 'get-url', 'origin')
+                                                   .and_raise('git remote get-url origin failed')
+
+      expect(described_class.send(:remote_matches_main_repository?, psdk_path)).to be(false)
+    end
+  end
+
   describe '.unuse_local_pokemonsdk' do # rubocop:disable Metrics/BlockLength
     let(:project_path) { '/path/to/project' }
     let(:psdk_path) { File.join(project_path, 'pokemonsdk') }

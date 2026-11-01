@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# rubocop:disable Metrics/BlockLength
+# rubocop:disable-next Metrics/BlockLength
 RSpec.describe Psdk::Cli::Use do
   subject { described_class.new }
 
@@ -76,4 +76,3 @@ RSpec.describe Psdk::Cli::Use do
     end
   end
 end
-# rubocop:enable Metrics/BlockLength

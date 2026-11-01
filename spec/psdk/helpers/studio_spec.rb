@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# rubocop:disable Metrics/BlockLength
+# rubocop:disable-next Metrics/BlockLength
 RSpec.describe Psdk::Cli::Studio do
   it 'provides Studio location in AppData' do
     expect(ENV).to receive(:fetch).with('AppData', '.').and_return('C:/Users/User/AppData/Roaming')
@@ -79,4 +79,3 @@ RSpec.describe Psdk::Cli::Studio do
     expect { Psdk::Cli::Studio.find_and_save_path(:local) }.to raise_error(RuntimeError, 'exit 1')
   end
 end
-# rubocop:enable Metrics/BlockLength

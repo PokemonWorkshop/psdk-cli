@@ -3,7 +3,7 @@
 require 'spec_helper'
 require 'psdk/helpers/version_update'
 
-# rubocop:disable Metrics/BlockLength
+# rubocop:disable-next Metrics/BlockLength
 RSpec.describe Psdk::Cli::VersionUpdate do
   describe '.check_and_update' do
     let(:local_version) { '1.0.0' }
@@ -85,4 +85,3 @@ RSpec.describe Psdk::Cli::VersionUpdate do
     end
   end
 end
-# rubocop:enable Metrics/BlockLength

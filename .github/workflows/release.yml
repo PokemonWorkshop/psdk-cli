@@ -1,0 +1,58 @@
+name: Release Gem
+
+on:
+  workflow_dispatch:
+
+jobs:
+  release:
+    name: Release Gem to RubyGems
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
+          bundler-cache: true
+
+      - name: Release Gem
+        uses: rubygems/release-gem@v1
+        with:
+          setup-trusted-publisher: false
+          attestations: false
+        env:
+          GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
+
+      - name: Send Changelog to Discord
+        if: ${{ secrets.DISCORD_WEBHOOK_URL != '' }}
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          ruby -rjson -Ilib -rpsdk/cli/version -e '
+            version = Psdk::Cli::VERSION
+            changelog = File.read("CHANGELOG.md")
+            match = changelog.match(/## \[.*?\]\s*\n(.*?)(?=\n## |\z)/m)
+            notes = match ? match[1].strip : "Release v#{version}"
+
+            payload = {
+              username: "GitHub Actions",
+              embeds: [
+                {
+                  title: "psdk-cli v#{version} released! 🚀",
+                  description: notes,
+                  url: "https://rubygems.org/gems/psdk-cli",
+                  color: 0x5865F2,
+                  timestamp: Time.now.utc.iso8601
+                }
+              ]
+            }
+
+            File.write("/tmp/discord_payload.json", JSON.dump(payload))
+          '
+          curl -sS -H "Content-Type: application/json" -X POST -d @/tmp/discord_payload.json "$DISCORD_WEBHOOK_URL"

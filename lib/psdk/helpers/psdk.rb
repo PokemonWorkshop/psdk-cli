@@ -181,7 +181,7 @@ module Psdk
       # Restore a previously renamed `pokemonsdk_old` folder if it points to the main PSDK repository
       # @param path [String] path where the pokemonsdk repository should end up
       # @return [Boolean] whether the folder was restored
-      def restore_old_pokemonsdk_folder(path)
+      def restore_old_pokemonsdk_folder(path) # rubocop:disable Naming/PredicateMethod
         old_path = "#{path}_old"
         return false unless File.exist?(File.join(old_path, '.git'))
         return false unless remote_matches_main_repository?(old_path)

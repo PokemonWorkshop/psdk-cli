@@ -54,7 +54,7 @@ module Psdk
           puts '[Error] project_paths is not an array'
           return
         end
-        unless paths.all? { |path| path.is_a?(String) }
+        unless paths.all?(String)
           puts '[Error] some of the project paths are not path'
           return
         end

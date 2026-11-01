@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# rubocop:disable Metrics/BlockLength
+# rubocop:disable-next Metrics/BlockLength
 RSpec.describe Psdk::Cli::Version do
   it 'only prints the cli version' do
     expect(Psdk::Cli::Version).to receive(:puts).with("psdk-cli v#{Psdk::Cli::VERSION}")
@@ -157,4 +157,3 @@ RSpec.describe Psdk::Cli::Version do
     Psdk::Cli::Version.run(false)
   end
 end
-# rubocop:enable Metrics/BlockLength

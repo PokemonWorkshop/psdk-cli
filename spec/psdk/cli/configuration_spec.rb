@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# rubocop:disable Metrics/BlockLength
+# rubocop:disable-next Metrics/BlockLength
 RSpec.describe Psdk::Cli::Configuration do
   before(:example) do
     Psdk::Cli::Configuration.instance_eval do
@@ -165,4 +165,3 @@ RSpec.describe Psdk::Cli::Configuration do
     expect(Psdk::Cli::Configuration.project_path).to eq('/users/user_a/documents/projects/super_game')
   end
 end
-# rubocop:enable Metrics/BlockLength

@@ -72,7 +72,7 @@ RSpec.describe Psdk::Cli::PSDK do # rubocop:disable Metrics/BlockLength
     end
   end
 
-  describe '.ensure_project_repository' do
+  describe '.ensure_project_repository' do # rubocop:disable Metrics/BlockLength
     let(:project_path) { '/path/to/project' }
     let(:psdk_path) { File.join(project_path, 'pokemonsdk') }
     let(:old_psdk_path) { "#{psdk_path}_old" }
@@ -96,7 +96,9 @@ RSpec.describe Psdk::Cli::PSDK do # rubocop:disable Metrics/BlockLength
         allow(File).to receive(:exist?).with(File.join(psdk_path, '.git')).and_return(false)
         allow(Dir).to receive(:exist?).with(psdk_path).and_return(true)
 
-        expect { described_class.send(:ensure_project_repository) }.to raise_error("#{psdk_path} exists but is not a Git repository")
+        expect do
+          described_class.send(:ensure_project_repository)
+        end.to raise_error("#{psdk_path} exists but is not a Git repository")
       end
     end
 
@@ -116,7 +118,8 @@ RSpec.describe Psdk::Cli::PSDK do # rubocop:disable Metrics/BlockLength
         allow(File).to receive(:exist?).with(File.join(psdk_path, '.git')).and_return(false)
         allow(Dir).to receive(:exist?).with(psdk_path).and_return(false)
         expect(described_class).to receive(:restore_old_pokemonsdk_folder).with(psdk_path).and_return(false)
-        expect(described_class).to receive(:system).with('git', 'clone', described_class::MAIN_REPOSITORY_URL, psdk_path).and_return(true)
+        expect(described_class).to receive(:system).with('git', 'clone', described_class::MAIN_REPOSITORY_URL,
+                                                         psdk_path).and_return(true)
 
         expect(described_class.send(:ensure_project_repository)).to eq(psdk_path)
       end
@@ -125,9 +128,12 @@ RSpec.describe Psdk::Cli::PSDK do # rubocop:disable Metrics/BlockLength
         allow(File).to receive(:exist?).with(File.join(psdk_path, '.git')).and_return(false)
         allow(Dir).to receive(:exist?).with(psdk_path).and_return(false)
         allow(described_class).to receive(:restore_old_pokemonsdk_folder).with(psdk_path).and_return(false)
-        allow(described_class).to receive(:system).with('git', 'clone', described_class::MAIN_REPOSITORY_URL, psdk_path).and_return(false)
+        allow(described_class).to receive(:system).with('git', 'clone', described_class::MAIN_REPOSITORY_URL,
+                                                        psdk_path).and_return(false)
 
-        expect { described_class.send(:ensure_project_repository) }.to raise_error("Failed to clone pokemonsdk into `#{psdk_path}`")
+        expect do
+          described_class.send(:ensure_project_repository)
+        end.to raise_error("Failed to clone pokemonsdk into `#{psdk_path}`")
       end
     end
   end
@@ -171,21 +177,21 @@ RSpec.describe Psdk::Cli::PSDK do # rubocop:disable Metrics/BlockLength
 
     it 'returns true when the origin remote matches the main repository' do
       allow(described_class).to receive(:run_git).with(psdk_path, 'remote', 'get-url', 'origin')
-                                                   .and_return(described_class::MAIN_REPOSITORY_URL)
+                                                 .and_return(described_class::MAIN_REPOSITORY_URL)
 
       expect(described_class.send(:remote_matches_main_repository?, psdk_path)).to be(true)
     end
 
     it 'returns false when the origin remote points elsewhere' do
       allow(described_class).to receive(:run_git).with(psdk_path, 'remote', 'get-url', 'origin')
-                                                   .and_return('https://gitlab.com/someone-else/pokemonsdk.git')
+                                                 .and_return('https://gitlab.com/someone-else/pokemonsdk.git')
 
       expect(described_class.send(:remote_matches_main_repository?, psdk_path)).to be(false)
     end
 
     it 'returns false when git raises an error' do
       allow(described_class).to receive(:run_git).with(psdk_path, 'remote', 'get-url', 'origin')
-                                                   .and_raise('git remote get-url origin failed')
+                                                 .and_raise('git remote get-url origin failed')
 
       expect(described_class.send(:remote_matches_main_repository?, psdk_path)).to be(false)
     end
